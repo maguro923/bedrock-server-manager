@@ -8,6 +8,8 @@ from datetime import datetime
 
 SERVER_PATH = r"C:\Users\user\server"
 BACKUP_PATH = r"C:\Users\user\server\backup"
+LOG_PATH = r"C:\Users\user\server\logs\server.log"
+ERROR_LOG_PATH = r"C:\Users\user\server\logs\error.log"
 WORLD_NAME = "Bedrock level"
 BACKUP_TIMES = ["00:00","06:00","12:00","18:00"]
 RESTART_TIME = "03:00"
@@ -100,6 +102,8 @@ def catch_error(proc):
         if not line:
             break
         print("\033[31m"+"Erorr! "+line.rstrip()+"\033[0m")
+        with open(ERROR_LOG_PATH, 'a', encoding='utf-8') as f:
+            f.write(line + "\n")
 
 def logging(proc):
     global players
@@ -110,6 +114,8 @@ def logging(proc):
         line = line.rstrip()
         if not ("Running AutoCompaction..." in line):
             print(line)
+            with open(LOG_PATH, 'a', encoding='utf-8') as f:
+                f.write(line + "\n")
 
         if "Player connected:" in line:
             players += 1
@@ -131,12 +137,20 @@ def manage_schedule():
             print("Scheduler error:",e)
         time.sleep(1)
 
+def init_logs():
+    os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+    with open(LOG_PATH, 'w', encoding='utf-8') as f:
+        f.write(f"logging started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    with open(ERROR_LOG_PATH, 'w', encoding='utf-8') as f:
+        f.write(f"error logging started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
 """def test():
     print("thread start successfully")
     time.sleep(50)
     print("thread work successfully")"""
 
 if __name__ == "__main__":
+    init_logs()
     os.makedirs(BACKUP_PATH, exist_ok=True)
     process = start_server()
     threading.Thread(target=manage_schedule,daemon=True).start()
