@@ -28,10 +28,13 @@ def download(version, path):
         return False
 
 def update_server(server_path, temp_dir):
+    print("updating server files...")
     temp_backup = os.path.join(server_path, "temp_backup")
     #os.makedirs(temp_backup, exist_ok=True)
     if os.path.exists(temp_backup):
+        print("removing old temp backup...")
         shutil.rmtree(temp_backup)
+    print("creating temp backup...")
     shutil.copytree(server_path, temp_backup,ignore=shutil.ignore_patterns('temp_backup','temp'))
     try:
         zip_path = os.path.join(temp_dir, "server.zip")
@@ -43,6 +46,7 @@ def update_server(server_path, temp_dir):
         if os.path.exists(extract_dir):
             shutil.rmtree(extract_dir)
 
+        print("extracting downloaded server files...")
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(extract_dir)
 
@@ -56,6 +60,7 @@ def update_server(server_path, temp_dir):
             "allowlist.json"
         ]
 
+        print("replacing server files...")
         for item in os.listdir(extract_dir):
             src = os.path.join(extract_dir, item)
             dst = os.path.join(server_path, item)
