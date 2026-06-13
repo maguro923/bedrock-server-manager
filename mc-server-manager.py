@@ -67,7 +67,7 @@ def rotate_backups():
         shutil.rmtree(os.path.join(BACKUP_PATH, backups[0]))
         backups.pop(0)
 
-def restart_server(verify=False):
+def restart_server(verify=False, notify=True):
     global players,process
     if verify==True and players != 0:
         print("players remein at server. restart was passed")
@@ -80,7 +80,7 @@ def restart_server(verify=False):
     process = start_server()
     players = 0
     threading.Thread(target=catch_error,args=(process,), daemon=True).start()
-    threading.Thread(target=logging,args=(process,), daemon=True).start()
+    threading.Thread(target=logging, args=(process,), kwargs={'notify_init_msg': False}, daemon=True).start()
     print("server restarted")
 
 def update_server(version=None):
@@ -151,7 +151,7 @@ def catch_error(proc):
         with open(ERROR_LOG_PATH, 'a', encoding='utf-8') as f:
             f.write(line + "\n")
 
-def logging(proc):
+def logging(proc, notify_init_msg=True):
     global players
     while True:
         line = proc.stdout.readline()
@@ -167,7 +167,8 @@ def logging(proc):
             version = log_watcher.get_version(line)
             if version:
                 update.set_version(version)
-                discord_sender.send(f"[INFO] server started. version: {version}")
+                if notify_init_msg:
+                    discord_sender.send(f"[INFO] server started. version: {version}")
 
         if "Player connected:" in line:
             players += 1
@@ -183,7 +184,7 @@ def logging(proc):
             discord_sender.send(info)
             
 def manage_schedule():
-    schedule.every().day.at(RESTART_TIME).do(restart_server,verify=True)
+    schedule.every().day.at(RESTART_TIME).do(restart_server,verify=True,notify=False)
     for i in BACKUP_TIMES:
         schedule.every().day.at(i).do(backup_world)
     while True:
