@@ -3,6 +3,7 @@ import re
 import requests
 import zipfile
 import shutil
+import stat
 
 # DOWNLOAD_PAGE = "https://www.minecraft.net/ja-jp/download/server/bedrock"
 version = None
@@ -26,6 +27,13 @@ def download(version, path):
     except Exception as e:
         print(f"error during download: {e}")
         return False
+    
+def clear_readonly(path):
+    for root, dirs, files in os.walk(path):
+        for dir in dirs:
+            os.chmod(os.path.join(root, dir), stat.S_IWRITE | stat.S_IREAD)
+        for file in files:
+            os.chmod(os.path.join(root, file), stat.S_IWRITE | stat.S_IREAD)
 
 def update_server(server_path, temp_dir):
     print("updating server files...")
@@ -33,6 +41,7 @@ def update_server(server_path, temp_dir):
     #os.makedirs(temp_backup, exist_ok=True)
     if os.path.exists(temp_backup):
         print("removing old temp backup...")
+        clear_readonly(temp_backup)
         shutil.rmtree(temp_backup)
     print("creating temp backup...")
     shutil.copytree(server_path, temp_backup,ignore=shutil.ignore_patterns('temp_backup','temp'))
