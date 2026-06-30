@@ -16,6 +16,7 @@ ERROR_LOG_PATH = r"C:\Users\user\server\logs\error.log"
 WORLD_NAME = "Bedrock level"
 BACKUP_TIMES = ["00:00","06:00","12:00","18:00"]
 RESTART_TIME = "03:00"
+UPDATE_CHECK_TIME = "04:00"
 MAX_BACKUPS = 12
 
 players = 0
@@ -85,6 +86,10 @@ def restart_server(verify=False, notify=True):
 
 def update_server(version=None):
     global process,players
+    if version == "latest":
+        version = update.get_latest_version()
+        if version is None:
+            return
     if version:
         if version == update.get_version():
             print("already up to date.")
@@ -137,6 +142,8 @@ def console():
             broadcast(cmd[4:])
         elif cmd == "version":
             print(f"current version: {update.get_version()}")
+        elif cmd == "update":
+            threading.Thread(target=update_server, args=("latest",), daemon=True).start()
         elif cmd.startswith("update "):
             threading.Thread(target=update_server,args=(cmd[7:],), daemon=True).start()
         else:
@@ -185,6 +192,7 @@ def logging(proc, notify_init_msg=True):
             
 def manage_schedule():
     schedule.every().day.at(RESTART_TIME).do(restart_server,verify=True,notify=False)
+    schedule.every().day.at(UPDATE_CHECK_TIME).do(update_server, version="latest")
     for i in BACKUP_TIMES:
         schedule.every().day.at(i).do(backup_world)
     while True:

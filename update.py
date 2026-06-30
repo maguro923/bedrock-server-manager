@@ -1,5 +1,6 @@
 import os
 import re
+from wsgiref import headers
 import requests
 import zipfile
 import shutil
@@ -7,6 +8,32 @@ import stat
 
 # DOWNLOAD_PAGE = "https://www.minecraft.net/ja-jp/download/server/bedrock"
 version = None
+
+def get_latest_version():
+    url = "https://net-secondary.web.minecraft-services.net/api/v1.0/download/links"
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            data = response.json()["result"]["links"]
+            download_url = next((item["downloadUrl"] for item in data if item["downloadType"] == "serverBedrockWindows"), None)
+            if download_url:
+                match = re.search(r"bedrock-server-([\d.]+)\.zip$", download_url)
+                if match:
+                    print(f"latest version: {match.group(1)}")
+                    return match.group(1)
+                else:
+                    raise Exception("Failed to extract version from download URL")
+            else:
+                raise Exception("No download URL found for serverBedrockWindows")
+        else:
+            raise Exception(f"Failed to fetch latest version: {response.status_code}")
+    except Exception as e:
+        print(f"error fetching latest version: {e}")
+        return None
+
 
 def download(version, path):
     # 最新バージョンのURLを生成
