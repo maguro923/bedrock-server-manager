@@ -114,6 +114,7 @@ def update_server(server_path, temp_dir):
 
             # 移動
             shutil.move(src, dst)
+        print("server files replaced successfully.")
     except Exception as e:
         print(f"error during update: {e}")
         return False
