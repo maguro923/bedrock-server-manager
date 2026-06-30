@@ -13,6 +13,7 @@ SERVER_PATH = r"C:\Users\user\server"
 BACKUP_PATH = r"C:\Users\user\server\backup"
 LOG_PATH = r"C:\Users\user\server\logs\server.log"
 ERROR_LOG_PATH = r"C:\Users\user\server\logs\error.log"
+EMERGENCY_BACKUP_PATH = r"C:\Users\user\emergency-backup-for-mc-server"
 WORLD_NAME = "Bedrock level"
 BACKUP_TIMES = ["00:00","06:00","12:00","18:00"]
 RESTART_TIME = "03:00"
@@ -113,7 +114,9 @@ def update_server(version=None):
                 raise Exception("update failed during file replacement.")
         except Exception as e:
             print(f"update failed: {e}")
-            discord_sender.send(f"[ERROR] server update failed")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shutil.copytree(os.path.join(SERVER_PATH,"temp_backup"), os.path.join(EMERGENCY_BACKUP_PATH,"backup_"+timestamp), dirs_exist_ok=True)  
+            discord_sender.send(f"[ERROR] server update failed: {e}")
             return
         #処理終了
         process = start_server()

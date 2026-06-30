@@ -72,52 +72,48 @@ def update_server(server_path, temp_dir):
         shutil.rmtree(temp_backup)
     print("creating temp backup...")
     shutil.copytree(server_path, temp_backup,ignore=shutil.ignore_patterns('temp_backup','temp'))
-    try:
-        zip_path = os.path.join(temp_dir, "server.zip")
-        extract_dir = os.path.join(temp_dir, "extracted")
+    #-----------------------------
+    zip_path = os.path.join(temp_dir, "server.zip")
+    extract_dir = os.path.join(temp_dir, "extracted")
+    if not zipfile.is_zipfile(zip_path):
+        raise Exception("zip file is corrupted")
 
-        if not zipfile.is_zipfile(zip_path):
-            raise Exception("zip file is corrupted")
+    if os.path.exists(extract_dir):
+        shutil.rmtree(extract_dir)
 
-        if os.path.exists(extract_dir):
-            shutil.rmtree(extract_dir)
-
-        print("extracting downloaded server files...")
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+    print("extracting downloaded server files...")
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(extract_dir)
 
-        # -----------------------------
-        # ファイル置換
-        # -----------------------------
-        keep_files = [
-            "worlds",
-            "server.properties",
-            "permissions.json",
-            "allowlist.json"
-        ]
+    # -----------------------------
+    # ファイル置換
+    # -----------------------------
+    keep_files = [
+        "worlds",
+        "server.properties",
+        "permissions.json",
+        "allowlist.json"
+    ]
 
-        print("replacing server files...")
-        for item in os.listdir(extract_dir):
-            src = os.path.join(extract_dir, item)
-            dst = os.path.join(server_path, item)
+    print("replacing server files...")
+    for item in os.listdir(extract_dir):
+        src = os.path.join(extract_dir, item)
+        dst = os.path.join(server_path, item)
 
-            # 保持対象はスキップ
-            if item in keep_files and os.path.exists(dst):
-                continue
+        # 保持対象はスキップ
+        if item in keep_files and os.path.exists(dst):
+            continue
 
-            # 既存削除
-            if os.path.exists(dst):
-                if os.path.isdir(dst):
-                    shutil.rmtree(dst)
-                else:
-                    os.remove(dst)
+        # 既存削除
+        if os.path.exists(dst):
+            if os.path.isdir(dst):
+                shutil.rmtree(dst)
+            else:
+                os.remove(dst)
 
-            # 移動
-            shutil.move(src, dst)
-        print("server files replaced successfully.")
-    except Exception as e:
-        print(f"error during update: {e}")
-        return False
+        # 移動
+        shutil.move(src, dst)
+    print("server files replaced successfully.")
     # temp削除
     try:
         shutil.rmtree(temp_dir)
