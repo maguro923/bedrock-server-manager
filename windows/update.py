@@ -1,12 +1,10 @@
 import os
 import re
-from wsgiref import headers
 import requests
 import zipfile
 import shutil
 import stat
 
-# DOWNLOAD_PAGE = "https://www.minecraft.net/ja-jp/download/server/bedrock"
 version = None
 
 def get_latest_version():
@@ -75,7 +73,6 @@ def _temp_backup_ignore(server_path):
 def update_server(server_path, temp_dir):
     print("updating server files...")
     temp_backup = os.path.join(server_path, "temp_backup")
-    #os.makedirs(temp_backup, exist_ok=True)
     if os.path.exists(temp_backup):
         print("removing old temp backup...")
         clear_readonly(temp_backup)

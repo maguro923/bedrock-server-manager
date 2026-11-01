@@ -12,17 +12,6 @@ from setting import load_settings
 
 settings = load_settings()
 
-#SERVER_PATH = 
-#BACKUP_PATH = 
-#LOG_PATH = 
-#ERROR_LOG_PATH = 
-#EMERGENCY_BACKUP_PATH = 
-#WORLD_NAME = 
-#BACKUP_TIMES = 
-#RESTART_TIME = 
-#UPDATE_CHECK_TIME = 
-#MAX_BACKUPS = 
-
 players = 0
 
 def start_server():
@@ -80,7 +69,7 @@ def rotate_backups():
 def restart_server(verify=False, notify=True):
     global players,process
     if verify==True and players != 0:
-        print("players remein at server. restart was passed")
+        print("players remain at server. restart was passed")
         backup_world()
         return
     send_cmd("stop")
@@ -165,7 +154,7 @@ def catch_error(proc):
         line = proc.stderr.readline()
         if not line:
             break
-        print("\033[31m"+"Erorr! "+line.rstrip()+"\033[0m")
+        print("\033[31m"+"Error! "+line.rstrip()+"\033[0m")
         with open(settings.error_log_path, 'a', encoding='utf-8') as f:
             f.write(line + "\n")
 
@@ -220,11 +209,6 @@ def init_logs():
     with open(settings.error_log_path, 'w', encoding='utf-8') as f:
         f.write(f"error logging started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
-"""def test():
-    print("thread start successfully")
-    time.sleep(50)
-    print("thread work successfully")"""
-
 if __name__ == "__main__":
     init_logs()
     os.makedirs(settings.backup_path, exist_ok=True)
@@ -232,5 +216,4 @@ if __name__ == "__main__":
     threading.Thread(target=manage_schedule,daemon=True).start()
     threading.Thread(target=catch_error,args=(process,), daemon=True).start()
     threading.Thread(target=logging,args=(process,), daemon=True).start()
-    #threading.Thread(target=test, daemon=True).start()
     console()
