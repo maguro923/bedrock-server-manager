@@ -66,6 +66,15 @@ def rotate_backups():
         shutil.rmtree(os.path.join(settings.backup_path, backups[0]))
         backups.pop(0)
 
+def wait_for_stop(timeout=60):
+    # stop送信後の終了待ち。時間内に終わらなければ強制終了する
+    try:
+        process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        print(f"server did not stop within {timeout} seconds. killing process...")
+        process.kill()
+        process.wait()
+
 def restart_server(verify=False, notify=True):
     global players,process
     if verify==True and players != 0:
@@ -73,7 +82,7 @@ def restart_server(verify=False, notify=True):
         backup_world()
         return
     send_cmd("stop")
-    process.wait()
+    wait_for_stop()
     time.sleep(5)
     backup_world(status="stop")
     process = start_server()
@@ -100,7 +109,7 @@ def update_server(version=None):
             return
         send_cmd("stop")
         discord_sender.send(f"[INFO] server is updating to version {version}...")
-        process.wait()
+        wait_for_stop()
         time.sleep(5)
         backup_world(status="stop")
         # 解凍して必要なファイルを置き換える
