@@ -56,8 +56,14 @@ def load_settings(path: Path = _CONFIG_PATH) -> Settings:
     if not isinstance(max_backups, int) or max_backups < 1:
         raise ValueError("config.toml: [backup] max_backups は1以上の整数にしてください")
 
+    server_path = Path(_require(server, "base_path", "server"))
+    if not server_path.is_dir():
+        raise ValueError(f"config.toml: [server] base_path のフォルダが存在しません: {server_path}")
+    if not (server_path / "bedrock_server.exe").is_file():
+        raise ValueError(f"config.toml: [server] base_path の直下に bedrock_server.exe が見つかりません: {server_path}")
+
     return Settings(
-        server_path=Path(_require(server, "base_path", "server")),
+        server_path=server_path,
         world_name=_require(server, "world_name", "server"),
         emergency_backup_path=Path(_require(server, "emergency_backup_path", "server")),
         backup_times=backup_times,
