@@ -1,0 +1,14 @@
+# bedrock-server-manager config file
+
+[server]
+base_path = 'your servers root path'
+world_name = "your world name"
+emergency_backup_path = 'backup path for emergency'
+
+[schedule]
+backup_times = ["00:00", "06:00", "12:00", "18:00"]
+restart_time = "03:00"
+update_check_time = "04:00"
+
+[backup]
+max_backups = 12
