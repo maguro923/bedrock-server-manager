@@ -3,9 +3,13 @@ import re
 def check_log(log):
     if "Player connected: " in log:
         player = get_player_name(log, "connected")
+        if player is None:
+            return None
         return f"[INFO] player online: {player}"
     elif "Player disconnected: " in log:
         player = get_player_name(log, "disconnected")
+        if player is None:
+            return None
         return f"[INFO] player offline: {player}"
     else :
         return None
