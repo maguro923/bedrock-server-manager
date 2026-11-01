@@ -90,8 +90,14 @@ def update_server(server_path, temp_dir):
         shutil.rmtree(extract_dir)
 
     print("extracting downloaded server files...")
+    extract_root = os.path.realpath(extract_dir)
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(extract_dir)
+        for member in zip_ref.infolist():
+            # 展開先の外を指すエントリは展開しない（Zip Slip対策）
+            target = os.path.realpath(os.path.join(extract_root, member.filename))
+            if os.path.commonpath([target, extract_root]) != extract_root:
+                raise Exception(f"unsafe path in zip: {member.filename}")
+            zip_ref.extract(member, extract_dir)
 
     # -----------------------------
     # ファイル置換
