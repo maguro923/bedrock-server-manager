@@ -97,6 +97,9 @@ def update_server(version=None):
         version = update.get_latest_version()
         if version is None:
             return
+    if version and not update.is_valid_version(version):
+        print(f"invalid version format: {version}")
+        return
     if version:
         if version == update.get_version():
             print("already up to date.")

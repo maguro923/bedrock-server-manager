@@ -33,6 +33,10 @@ def get_latest_version():
         return None
 
 
+def is_valid_version(version):
+    # 要素数は固定せず、数字とドットのみで構成される形式だけを許可する
+    return isinstance(version, str) and re.fullmatch(r"\d+(\.\d+)*", version) is not None
+
 def download(version, path):
     # 最新バージョンのURLを生成
     url = f"https://www.minecraft.net/bedrockdedicatedserver/bin-win/bedrock-server-{version}.zip"
