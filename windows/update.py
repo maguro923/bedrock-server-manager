@@ -62,6 +62,16 @@ def clear_readonly(path):
         for file in files:
             os.chmod(os.path.join(root, file), stat.S_IWRITE | stat.S_IREAD)
 
+def _temp_backup_ignore(server_path):
+    # temp_backup作成時の除外。backupとlogsはサーバー直下のみ、temp系は全階層で対象
+    root = os.path.abspath(server_path)
+    def ignore(dirpath, names):
+        targets = ("temp_backup", "temp")
+        if os.path.abspath(dirpath) == root:
+            targets = targets + ("backup", "logs")
+        return [name for name in names if name in targets]
+    return ignore
+
 def update_server(server_path, temp_dir):
     print("updating server files...")
     temp_backup = os.path.join(server_path, "temp_backup")
@@ -71,7 +81,7 @@ def update_server(server_path, temp_dir):
         clear_readonly(temp_backup)
         shutil.rmtree(temp_backup)
     print("creating temp backup...")
-    shutil.copytree(server_path, temp_backup,ignore=shutil.ignore_patterns('temp_backup','temp'))
+    shutil.copytree(server_path, temp_backup, ignore=_temp_backup_ignore(server_path))
     #-----------------------------
     zip_path = os.path.join(temp_dir, "server.zip")
     extract_dir = os.path.join(temp_dir, "extracted")
