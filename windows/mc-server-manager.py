@@ -67,7 +67,12 @@ def backup_world(status="running"):
     print("backup complete")
 
 def rotate_backups():
-    backups = sorted(os.listdir(settings.backup_path))
+    # 世代管理の対象は、backup_world が作る world_<日時> フォルダだけにする。
+    backups = sorted(
+        entry.name
+        for entry in os.scandir(settings.backup_path)
+        if entry.is_dir() and entry.name.startswith("world_")
+    )
     while len(backups) > settings.max_backups:
         shutil.rmtree(os.path.join(settings.backup_path, backups[0]))
         backups.pop(0)
