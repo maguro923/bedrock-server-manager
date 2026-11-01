@@ -13,7 +13,7 @@ def get_latest_version():
         "User-Agent": "Mozilla/5.0"
     }
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=(5, 30))
         if response.status_code == 200:
             data = response.json()["result"]["links"]
             download_url = next((item["downloadUrl"] for item in data if item["downloadType"] == "serverBedrockWindows"), None)
