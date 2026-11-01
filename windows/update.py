@@ -89,6 +89,7 @@ def update_server(server_path, temp_dir):
         raise Exception("zip file is corrupted")
 
     if os.path.exists(extract_dir):
+        clear_readonly(extract_dir)
         shutil.rmtree(extract_dir)
 
     print("extracting downloaded server files...")
@@ -114,11 +115,13 @@ def update_server(server_path, temp_dir):
         if item in keep_files and os.path.exists(dst):
             continue
 
-        # 既存削除
+        # 既存削除（Windowsでは読み取り専用だと削除できないため、先に属性を解除する）
         if os.path.exists(dst):
             if os.path.isdir(dst):
+                clear_readonly(dst)
                 shutil.rmtree(dst)
             else:
+                os.chmod(dst, stat.S_IWRITE | stat.S_IREAD)
                 os.remove(dst)
 
         # 移動
@@ -126,6 +129,7 @@ def update_server(server_path, temp_dir):
     print("server files replaced successfully.")
     # temp削除
     try:
+        clear_readonly(temp_dir)
         shutil.rmtree(temp_dir)
     except Exception as e:
         print("temp cleanup failed:", e)
