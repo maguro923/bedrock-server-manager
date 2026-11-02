@@ -52,10 +52,15 @@ def download(version, path):
             return True
         else:
             print(f"failed to download: {res.status_code}")
-            return False
     except Exception as e:
         print(f"error during download: {e}")
-        return False
+    # ダウンロードに失敗した場合は、書き込み途中のファイルを残さない
+    if os.path.exists(path):
+        try:
+            os.remove(path)
+        except OSError as cleanup_error:
+            print(f"failed to remove incomplete file: {cleanup_error}")
+    return False
     
 def clear_readonly(path):
     for root, dirs, files in os.walk(path):
