@@ -134,13 +134,12 @@ def update_server(server_path, temp_dir):
         # 移動
         shutil.move(src, dst)
     print("server files replaced successfully.")
-    # temp削除
+    # temp削除（後片付けの成否は更新の成否と分けて扱い、失敗しても警告のみとする）
     try:
         clear_readonly(temp_dir)
         shutil.rmtree(temp_dir)
     except Exception as e:
         print("temp cleanup failed:", e)
-        return False
     return True
 
 
