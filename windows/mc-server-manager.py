@@ -40,19 +40,20 @@ def broadcast(message):
 
 def backup_world(status="running"):
     print("start to create backup")
-    if status == "running":
-        send_cmd("save hold")
-        time.sleep(5)
+    try:
+        if status == "running":
+            send_cmd("save hold")
+            time.sleep(5)
 
-    world_path = os.path.join(settings.server_path,"worlds",settings.world_name)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    dest = os.path.join(settings.backup_path, f"world_{timestamp}")
+        world_path = os.path.join(settings.server_path,"worlds",settings.world_name)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        dest = os.path.join(settings.backup_path, f"world_{timestamp}")
 
-    shutil.copytree(world_path,dest)
-    rotate_backups()
-    
-    if status == "running":
-        send_cmd("save resume")
+        shutil.copytree(world_path,dest)
+        rotate_backups()
+    finally:
+        if status == "running":
+            send_cmd("save resume")
     print("backup complete")
 
 def rotate_backups():
