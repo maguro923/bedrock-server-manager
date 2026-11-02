@@ -35,6 +35,8 @@ def start_server():
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         bufsize=1
     )
 
@@ -260,8 +262,11 @@ def catch_error(proc):
         if not line:
             break
         print("\033[31m"+"Error! "+line.rstrip()+"\033[0m")
-        with open(settings.error_log_path, 'a', encoding='utf-8') as f:
-            f.write(line if line.endswith("\n") else line + "\n")
+        try:
+            with open(settings.error_log_path, 'a', encoding='utf-8') as f:
+                f.write(line if line.endswith("\n") else line + "\n")
+        except OSError as e:
+            print(f"failed to write error log: {e}")
 
 def logging(proc, notify_init_msg=True):
     global players
@@ -272,8 +277,11 @@ def logging(proc, notify_init_msg=True):
         line = line.rstrip()
         if not ("Running AutoCompaction..." in line):
             print(line)
-            with open(settings.log_path, 'a', encoding='utf-8') as f:
-                f.write(line + "\n")
+            try:
+                with open(settings.log_path, 'a', encoding='utf-8') as f:
+                    f.write(line + "\n")
+            except OSError as e:
+                print(f"failed to write server log: {e}")
 
         if "Version: " in line:
             version = log_watcher.get_version(line)
