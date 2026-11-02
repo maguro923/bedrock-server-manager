@@ -225,9 +225,18 @@ def update_server(version=None):
 
 def console():
     while True:
-        cmd = input()
+        try:
+            cmd = input()
+        except EOFError:
+            print("stdin closed. waiting for running operations to finish...")
+            with _operation_lock:
+                send_cmd("stop")
+            break
 
         if cmd=="exit":
+            if not _operation_lock.acquire(blocking=False):
+                print("another operation is running. exit was cancelled.")
+                continue
             send_cmd("stop")
             break
         elif cmd == "restart":
