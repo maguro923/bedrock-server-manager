@@ -178,15 +178,19 @@ def update_server(version=None):
                 shutil.copytree(os.path.join(settings.server_path,"temp_backup"), os.path.join(settings.emergency_backup_path,"backup_"+timestamp), dirs_exist_ok=True)
             except Exception as copy_error:
                 print(f"emergency backup copy failed: {copy_error}")
-            restored = restore_from_temp_backup()
+            try:
+                restored = restore_from_temp_backup()
+            except Exception as restore_error:
+                print(f"restore failed: {restore_error}")
+                restored = False
+            if not restored:
+                discord_sender.send(f"[ERROR] server update failed: {e}. restore also failed; server remains stopped.")
+                return
             process = start_server()
             players = 0
             threading.Thread(target=catch_error,args=(process,), daemon=True).start()
             threading.Thread(target=logging,args=(process,), daemon=True).start()
-            if restored:
-                discord_sender.send(f"[ERROR] server update failed: {e}. restored previous files and restarted.")
-            else:
-                discord_sender.send(f"[ERROR] server update failed: {e}. restore failed; restarted with current files.")
+            discord_sender.send(f"[ERROR] server update failed: {e}. restored previous files and restarted.")
             return
         #処理終了
         process = start_server()
