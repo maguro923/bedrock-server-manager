@@ -1,5 +1,6 @@
 import subprocess
 import threading
+import functools
 import time
 import os
 import schedule
@@ -13,6 +14,16 @@ from setting import load_settings
 settings = load_settings()
 
 players = 0
+
+_operation_lock = threading.RLock()
+
+def with_operation_lock(func):
+    # 再起動・更新・バックアップの同時実行を防ぐ（内部からの呼び直しはRLockで通す）
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with _operation_lock:
+            return func(*args, **kwargs)
+    return wrapper
 
 def start_server():
     exe_path = os.path.join(settings.server_path,"bedrock_server.exe")
@@ -38,6 +49,7 @@ def send_cmd(cmd):
 def broadcast(message):
     send_cmd(f"say {message}")
 
+@with_operation_lock
 def backup_world(status="running"):
     print("start to create backup")
     try:
@@ -76,6 +88,7 @@ def wait_for_stop(timeout=60):
         process.kill()
         process.wait()
 
+@with_operation_lock
 def restart_server(verify=False, notify=True):
     global players,process
     if verify==True and players != 0:
@@ -92,6 +105,7 @@ def restart_server(verify=False, notify=True):
     threading.Thread(target=logging, args=(process,), kwargs={'notify_init_msg': False}, daemon=True).start()
     print("server restarted")
 
+@with_operation_lock
 def update_server(version=None):
     global process,players
     if version == "latest":
