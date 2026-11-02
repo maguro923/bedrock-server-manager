@@ -3,6 +3,7 @@ import threading
 import functools
 import time
 import os
+import stat
 import schedule
 import shutil
 from datetime import datetime
@@ -105,6 +106,40 @@ def restart_server(verify=False, notify=True):
     threading.Thread(target=logging, args=(process,), kwargs={'notify_init_msg': False}, daemon=True).start()
     print("server restarted")
 
+def restore_from_temp_backup():
+    # 更新失敗時に、置換前の状態（temp_backup）へサーバーフォルダを戻す
+    temp_backup = os.path.join(settings.server_path, "temp_backup")
+    if not os.path.isdir(temp_backup):
+        print("temp backup not found. cannot restore.")
+        return False
+    keep = {"backup", "logs", "temp", "temp_backup"}
+    restored_items = set(os.listdir(temp_backup))
+    for item in os.listdir(settings.server_path):
+        if item in keep or item in restored_items:
+            continue
+        # 置換の途中で増えたファイルは残さない
+        leftover = os.path.join(settings.server_path, item)
+        if os.path.isdir(leftover):
+            update.clear_readonly(leftover)
+            shutil.rmtree(leftover)
+        else:
+            os.chmod(leftover, stat.S_IWRITE | stat.S_IREAD)
+            os.remove(leftover)
+    for item in restored_items:
+        src_path = os.path.join(temp_backup, item)
+        dst_path = os.path.join(settings.server_path, item)
+        if os.path.isdir(src_path):
+            if os.path.exists(dst_path):
+                update.clear_readonly(dst_path)
+                shutil.rmtree(dst_path)
+            shutil.copytree(src_path, dst_path)
+        else:
+            if os.path.exists(dst_path):
+                os.chmod(dst_path, stat.S_IWRITE | stat.S_IREAD)
+            shutil.copy2(src_path, dst_path)
+    print("server files restored from temp backup.")
+    return True
+
 @with_operation_lock
 def update_server(version=None):
     global process,players
@@ -138,9 +173,20 @@ def update_server(version=None):
                 raise Exception("update failed during file replacement.")
         except Exception as e:
             print(f"update failed: {e}")
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shutil.copytree(os.path.join(settings.server_path,"temp_backup"), os.path.join(settings.emergency_backup_path,"backup_"+timestamp), dirs_exist_ok=True)  
-            discord_sender.send(f"[ERROR] server update failed: {e}")
+            try:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                shutil.copytree(os.path.join(settings.server_path,"temp_backup"), os.path.join(settings.emergency_backup_path,"backup_"+timestamp), dirs_exist_ok=True)
+            except Exception as copy_error:
+                print(f"emergency backup copy failed: {copy_error}")
+            restored = restore_from_temp_backup()
+            process = start_server()
+            players = 0
+            threading.Thread(target=catch_error,args=(process,), daemon=True).start()
+            threading.Thread(target=logging,args=(process,), daemon=True).start()
+            if restored:
+                discord_sender.send(f"[ERROR] server update failed: {e}. restored previous files and restarted.")
+            else:
+                discord_sender.send(f"[ERROR] server update failed: {e}. restore failed; restarted with current files.")
             return
         #処理終了
         process = start_server()
