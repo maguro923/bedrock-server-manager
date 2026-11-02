@@ -99,7 +99,10 @@ def restart_server(verify=False, notify=True):
     send_cmd("stop")
     wait_for_stop()
     time.sleep(5)
-    backup_world(status="stop")
+    try:
+        backup_world(status="stop")
+    except Exception as e:
+        print(f"backup failed: {e}. continuing restart.")
     process = start_server()
     players = 0
     threading.Thread(target=catch_error,args=(process,), daemon=True).start()
@@ -164,7 +167,23 @@ def update_server(version=None):
         discord_sender.send(f"[INFO] server is updating to version {version}...")
         wait_for_stop()
         time.sleep(5)
-        backup_world(status="stop")
+        try:
+            backup_world(status="stop")
+        except Exception as e:
+            print(f"backup failed: {e}. aborting update.")
+            discord_sender.send(f"[ERROR] backup failed: {e}. update aborted; server restarted.")
+            try:
+                temp_dir = os.path.join(settings.server_path, "temp")
+                if os.path.exists(temp_dir):
+                    update.clear_readonly(temp_dir)
+                    shutil.rmtree(temp_dir)
+            except Exception as cleanup_error:
+                print(f"temp cleanup failed: {cleanup_error}")
+            process = start_server()
+            players = 0
+            threading.Thread(target=catch_error,args=(process,), daemon=True).start()
+            threading.Thread(target=logging,args=(process,), daemon=True).start()
+            return
         # 解凍して必要なファイルを置き換える
         res = False
         try:
