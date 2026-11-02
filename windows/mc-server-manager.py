@@ -261,7 +261,7 @@ def catch_error(proc):
             break
         print("\033[31m"+"Error! "+line.rstrip()+"\033[0m")
         with open(settings.error_log_path, 'a', encoding='utf-8') as f:
-            f.write(line + "\n")
+            f.write(line if line.endswith("\n") else line + "\n")
 
 def logging(proc, notify_init_msg=True):
     global players
