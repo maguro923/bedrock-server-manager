@@ -32,6 +32,12 @@ def _require(section: dict, key: str, section_name: str):
     return section[key]
 
 
+def _check_world_name(value) -> str:
+    if not isinstance(value, str) or not value or value in (".", "..") or "/" in value or "\\" in value:
+        raise ValueError(f"config.toml: [server] world_name が不正です（現在値: {value!r}）")
+    return value
+
+
 def _check_time(value, key: str) -> str:
     if not isinstance(value, str) or not _TIME_RE.match(value):
         raise ValueError(f"config.toml: {key} は HH:MM 形式で書いてください（現在値: {value!r}）")
@@ -48,12 +54,12 @@ def load_settings(path: Path = _CONFIG_PATH) -> Settings:
     schedule = raw.get("schedule", {})
     backup = raw.get("backup", {})
 
-    backup_times = list(
-        _check_time(t, "schedule.backup_times")
-        for t in _require(schedule, "backup_times", "schedule")
-    )
+    backup_times_raw = _require(schedule, "backup_times", "schedule")
+    if not isinstance(backup_times_raw, list):
+        raise ValueError("config.toml: [schedule] backup_times はリストで書いてください")
+    backup_times = [_check_time(t, "schedule.backup_times") for t in backup_times_raw]
     max_backups = _require(backup, "max_backups", "backup")
-    if not isinstance(max_backups, int) or max_backups < 1:
+    if not isinstance(max_backups, int) or isinstance(max_backups, bool) or max_backups < 1:
         raise ValueError("config.toml: [backup] max_backups は1以上の整数にしてください")
 
     server_path = Path(_require(server, "base_path", "server"))
@@ -64,7 +70,7 @@ def load_settings(path: Path = _CONFIG_PATH) -> Settings:
 
     return Settings(
         server_path=server_path,
-        world_name=_require(server, "world_name", "server"),
+        world_name=_check_world_name(_require(server, "world_name", "server")),
         emergency_backup_path=Path(_require(server, "emergency_backup_path", "server")),
         backup_times=backup_times,
         restart_time=_check_time(_require(schedule, "restart_time", "schedule"), "schedule.restart_time"),
